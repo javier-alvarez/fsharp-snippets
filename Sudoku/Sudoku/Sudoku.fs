@@ -37,32 +37,25 @@ module Sudoku =
         let lookup = System.Collections.Generic.HashSet<'T>() 
         Seq.exists (fun item ->  not (lookup.Add item)) seq
 
+    let extractCells positions board = 
+                  positions
+                     |> Seq.map (fun (x,y) -> board.Grid.TryFind {CellLocation.X=x;CellLocation.Y=y})
+                     |> Seq.filter (fun rowOption-> rowOption.IsSome && rowOption.IsSome) 
+                     |> Seq.map (fun cell->cell.Value.Value)
+
     let isValidRow board i =
-        let rows = [1..board.Size] 
-                    |> Seq.map (fun col -> board.Grid.TryFind {CellLocation.X=i;CellLocation.Y=col})
-                    |> Seq.filter (fun rowOption-> rowOption.IsSome && rowOption.IsSome) 
-                    |> Seq.map (fun cell->cell.Value.Value)
-        // Check if all numbers are distinct
+        let positions = seq { for y in 1 .. board.Size do yield (i,y) }
+        let rows = extractCells positions  board
         not (hasDuplicates rows)
 
     let isValidColumn board i =
-        let rows = [1..board.Size] 
-                    |> Seq.map (fun row -> board.Grid.TryFind {CellLocation.X=row;CellLocation.Y=i})
-                    |> Seq.filter (fun rowOption-> rowOption.IsSome && rowOption.IsSome) 
-                    |> Seq.map (fun cell->cell.Value.Value)
-        // Check if all numbers are distinct
+        let positions = seq { for x in 1 .. board.Size do yield (x,i) }
+        let rows = extractCells positions  board
         not (hasDuplicates rows)
 
     let isValidRegion board i j =
-        let positions = seq{
-                for x in [i..i+2] do
-                    for y in [j..j+2] do
-                        yield (x,y) 
-            }
-        let itemsInRegion = positions
-                            |> Seq.map (fun (x,y) -> board.Grid.TryFind {CellLocation.X=x;CellLocation.Y=y})
-                            |> Seq.filter (fun rowOption-> rowOption.IsSome && rowOption.IsSome) 
-                            |> Seq.map (fun cell->cell.Value.Value)
+        let positions = seq{ for x in [i..i+2] do for y in [j..j+2] do yield (x,y)}
+        let itemsInRegion = extractCells positions board
         not (hasDuplicates itemsInRegion)
 
     let allRegions = 
